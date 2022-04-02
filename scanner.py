@@ -1,12 +1,8 @@
+import ipaddress
 import sys
 import socket
 import time
 import argparse
-
-# Define variables
-OUTPUT_FILE='scan.json'
-DEFAULT_PORT_START=1
-DEFAULT_PORT_END=140
 
 def scan_port(host, port):
         try:
@@ -33,24 +29,67 @@ def scan_host(host, startPort, endPort):
             scan_port(host, port)
 
 def main():
-
     startTime = time.time()
-    # Defining a target
-    if len(sys.argv) == 2:
-        # translate hostname to IPv4
-        target = socket.gethostbyname(sys.argv[1])
-    else:
-        print("Invalid amount of Argument")
 
-    # Add Intro information
-    print("-" * 50)
-    print("Scanning Target: " + target)
-    print("-" * 50)    
-
-    scan_host(target, startPort=DEFAULT_PORT_START, endPort=DEFAULT_PORT_END)
+    # Define variables
+    OUTPUT_FILE='scan.json'
+    PORT_START=1
+    PORT_END=140
     
+    # Get params from CLI
+    aparse = argparse.ArgumentParser(description='Options for creating a network scanner.')
+    aparse.add_argument("-s", "--start", type=int, help="Start port, default value 1")
+    aparse.add_argument("-e", "--end", type=int, help="End port, default value 1024")
+    aparse.add_argument("-i", "--ip", help="IP Address to scan (e.g. 10.1.1.1)")
+    aparse.add_argument("-n", "--network", help="Network to scan (IPv4 format)")    
+    args = aparse.parse_args()
     
+    if args.start is not None:
+        PORT_START = args.start
 
+    if args.end is not None:
+        PORT_START = args.end
+    
+    if args.ip is not None:
+        try:
+            ipaddress.ip_address(args.ip)
+        except:
+            print("ERROR: IP address is not valid!")
+            aparse.print_help()
+            sys.exit()
+        targetIps = [socket.gethostbyname(args.ip)]
+        print(targetIps)
+    
+    if args.network is not None:
+        targetIps = ipaddress.ip_network(args.network).hosts()
+
+    # Parsing check
+    # IP or network required
+    if args.network is None and args.ip is None:
+        print("ERROR: Specify IP address or Network to scan!")
+        aparse.print_help()
+        sys.exit()
+        
+    # Ports check        
+    if PORT_START > PORT_END:
+        print("ERROR: Starting port value has to be lower than ending port value!")
+        aparse.print_help()
+        sys.exit()
+    
+    if PORT_START not in range(1,65535) or PORT_END not in range (1,65536):
+        print("Error: Defined ports are not valid!")
+        aparse.print_help()
+        sys.exit()  
+    
+       
+
+    for ip in targetIps:
+        # Add Intro information
+        print("-" * 50)
+        print("Scanning Target: " + str(ip))
+        print("-" * 50) 
+        scan_host(str(ip), PORT_START, PORT_END)
+    
     print('Time taken:', time.time() - startTime)
 
 
