@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 import ipaddress
 import json
 import sys
@@ -25,7 +25,6 @@ class MyThread (Thread):
                 print(e)
             finally:
                 self.pool.task_done()
-
 
 class Pool:
     """Pool for Tasks """
@@ -62,6 +61,22 @@ def scan_port(host, port, results):
         print("\ Error: Server not responding.")
         sys.exit()
 
+def compare_scans(previous_results, new_results, host, ports, results):
+    if previous_results != new_results or (previous_results is None and new_results is None):
+        print("-" * 50)
+        print("Differences for host {} found!".format(host))
+        print("Current output:")
+        for ports in results[host]["ports"]:
+            print("Ports: {1}/tcp/open".format(host, ports))
+        print("Previous output:")
+        for ports in previous_results:
+            print("Ports: {1}/tcp/open".format(host, ports))
+    else:
+        print("-" * 50)
+        print("Host {}: No difference in open ports found in the current scan".format(host))
+        print("Current output:")
+        for ports in results[host]["ports"]:
+            print("Ports: {1}/tcp/open".format(host, ports))
 
 def scan_host(host, startPort, endPort, results):
     tasks = Pool(1000)
@@ -79,22 +94,8 @@ def scan_host(host, startPort, endPort, results):
     new_results = list(results[host]["ports"])
     # print(new_scan)
 
+    compare_scans(previous_results, new_results, host, port, results) 
     
-    if previous_results != new_results or (previous_results is None and new_results is None):
-        print("-" * 50)
-        print("Differences for host {} found!".format(host))
-        print("Current output:")
-        for ports in results[host]["ports"]:
-            print("Ports: {1}/tcp/open".format(host, ports))
-        print("Previous output:")
-        for ports in previous_results:
-            print("Ports: {1}/tcp/open".format(host, ports))
-    else:
-        print("-" * 50)
-        print("Host {}: No difference in open ports found in the current scan".format(host))
-        print("Current output:")
-        for ports in results[host]["ports"]:
-            print("Ports: {1}/tcp/open".format(host, ports))
 
 
 def main():
@@ -120,17 +121,13 @@ def main():
     if args.end is not None:
         PORT_START = args.end
 
-    # if args.ip is not None:
-    #    try:
-    #        ipaddress.ip_address(args.ip)
-    #    except:
-    #        print("ERROR: IP address is not valid!")
-    #        aparse.print_help()
-    #        sys.exit()
-    #    targetIps = [socket.gethostbyname(args.ip)]
-
     if args.ip is not None:
-        targetIps = ipaddress.ip_network(args.ip).hosts()
+        try:
+            targetIps = ipaddress.ip_network(args.ip).hosts()
+        except:
+            print("ERROR: Specify a valid IP address or Network to scan!")
+            aparse.print_help()
+            sys.exit()    
 
     # Parsing check
     # IP or network required
@@ -155,9 +152,7 @@ def main():
         with open(OUTPUT_FILE, "r") as file:
             results = json.load(file)
     except IOError:
-        pass
-
-    
+        pass    
 
     for ip in targetIps:       
         scan_host(str(ip), PORT_START, PORT_END, results)
@@ -165,7 +160,6 @@ def main():
     # Save results
     with open(OUTPUT_FILE, "w") as file:
         json.dump(results, file)
-
 
 if __name__ == "__main__":
     main()
