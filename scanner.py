@@ -42,7 +42,6 @@ class Pool:
         """ """
         self.tasks.join()
 
-
 def scan_port(host, port, results):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -61,7 +60,9 @@ def scan_port(host, port, results):
         print("\ Error: Server not responding.")
         sys.exit()
 
-def compare_scans(previous_results, new_results, host, ports, results):
+def compare_scans(previous_results, host, ports, results):
+    new_results = list(results[host]["ports"])
+
     if previous_results != new_results or (previous_results is None and new_results is None):
         print("-" * 50)
         print("Differences for host {} found!".format(host))
@@ -78,30 +79,28 @@ def compare_scans(previous_results, new_results, host, ports, results):
         for ports in results[host]["ports"]:
             print("Ports: {1}/tcp/open".format(host, ports))
 
+    # Save results
+    with open(OUTPUT_FILE, "w") as file:
+        json.dump(results, file)
+
 def scan_host(host, startPort, endPort, results):
-    tasks = Pool(1000)
+    previous_results = list(results[host]["ports"])
     if host not in results:
-        results.update({host: {"ports": []}})
-        previous_results = []
+        results.update({host: {"ports": []}})        
     else:
-        previous_results = list(results[host]["ports"])
         results[host]["ports"].clear()
 
+    # Scan ports simultaneously    
+    tasks = Pool(1024)
     for port in range(startPort, endPort+1):
         tasks.add_task (scan_port, host, port, results)
-        #scan_port(host, port, results)
-    # Results comparison
-    new_results = list(results[host]["ports"])
-    # print(new_scan)
-
-    compare_scans(previous_results, new_results, host, port, results) 
-    
-
+    tasks.wait()
+    compare_scans(previous_results, host, port, results)     
 
 def main():
     # Define variables
-    PORT_START = 1
-    PORT_END = 150
+    port_start = 1
+    port_end = 150
     results = {}
 
     # Get params from CLI
@@ -116,10 +115,10 @@ def main():
     args = aparse.parse_args()
 
     if args.start is not None:
-        PORT_START = args.start
+        port_start = args.start
 
     if args.end is not None:
-        PORT_START = args.end
+        port_end = args.end
 
     if args.ip is not None:
         try:
@@ -137,12 +136,12 @@ def main():
         sys.exit()
 
     # Ports check
-    if PORT_START > PORT_END:
+    if port_start > port_end:
         print("ERROR: Starting port value has to be lower than ending port value!")
         aparse.print_help()
         sys.exit()
 
-    if PORT_START not in range(1, 65535) or PORT_END not in range(1, 65536):
+    if port_start not in range(1, 65535) or port_end not in range(1, 65536):
         print("Error: Defined ports are not valid!")
         aparse.print_help()
         sys.exit()
@@ -155,11 +154,7 @@ def main():
         pass    
 
     for ip in targetIps:       
-        scan_host(str(ip), PORT_START, PORT_END, results)
-
-    # Save results
-    with open(OUTPUT_FILE, "w") as file:
-        json.dump(results, file)
+        scan_host(str(ip), port_start, port_end, results)   
 
 if __name__ == "__main__":
     main()
