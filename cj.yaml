@@ -15,5 +15,6 @@ spec:
             command:
             - /bin/sh
             - -c
-            - date; echo Hello from the Kubernetes cluster
+            - /usr/local/bin/python3.10 scanner.py --ip 192.168.1.13
+            - date; Thank you for having patience with me :)
           restartPolicy: OnFailure

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import ipaddress
 import json
 import sys
@@ -8,7 +8,6 @@ from queue import Queue
 from threading import Thread
 
 OUTPUT_FILE = 'scan.json'
-
 
 class MyThread (Thread):
     def __init__(self, tasks):
