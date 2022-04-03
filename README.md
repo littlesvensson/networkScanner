@@ -16,3 +16,17 @@ $ ./scanner.py -i <ipaddress/network> -s <starting port number> -e <ending port 
 ```
 
 The host/network parameter is required in order to run the scan.
+
+### Applying manifest
+
+Apply the manifest by running:
+```
+$ kubectl apply -f cj.yaml
+```
+
+Now the program will be run every 5 minutes. You can check it with the following command:
+```
+$ kubectl get cj
+```
+
+The IP address or network can be configured in the cj.yaml file.
