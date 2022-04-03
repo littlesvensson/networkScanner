@@ -1,19 +1,21 @@
-apiVersion: batch/v1
-kind: CronJob
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: scanner
+  name: scanner-deployment
+  labels:
+    app: scanner
 spec:
-  schedule: "*/5 * * * *"
-  jobTemplate:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: scanner
+  template:
+    metadata:
+      labels:
+        app: scanner
     spec:
-      template:
-        spec:
-          containers:
-          - name: network_scanner
-            image: busybox:1.28
-            imagePullPolicy: IfNotPresent
-            command:
-            - /bin/sh
-            - -c
-            - date; echo Hello from the Kubernetes cluster
-          restartPolicy: OnFailure
+      containers:
+      - name: networkScanner
+        image: jana.vonsak/scanner:dev
+        ports:
+        - containerPort: 80
