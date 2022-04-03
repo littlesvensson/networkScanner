@@ -10,11 +10,10 @@ spec:
         spec:
           containers:
           - name: scanner
-            image: busybox:1.28
+            image: janavonsak/scanner:dev
             imagePullPolicy: IfNotPresent
             command:
             - /bin/sh
             - -c
-            - /usr/local/bin/python3.10 scanner.py --ip 192.168.1.13
-            - date; Thank you for having patience with me :)
+            - python scanner.py --ip 192.168.1.13
           restartPolicy: OnFailure
