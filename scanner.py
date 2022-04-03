@@ -66,30 +66,32 @@ def compare_scans(previous_results, host, ports, results):
     if previous_results != new_results or (previous_results is None and new_results is None):
         print("-" * 50)
         print("Differences for host {} found!".format(host))
-        print("Current output:")
-        for ports in results[host]["ports"]:
-            print("Ports: {1}/tcp/open".format(host, ports))
-        print("Previous output:")
-        for ports in previous_results:
-            print("Ports: {1}/tcp/open".format(host, ports))
+        print("Current scan:")
+        for port in new_results:
+            print("Port: {} /tcp/open".format(port))
+        print("Previous scan:")
+        for port in previous_results:
+            print("Ports: {} /tcp/open".format(port))
     else:
         print("-" * 50)
         print("Host {}: No difference in open ports found in the current scan".format(host))
-        print("Current output:")
-        for ports in results[host]["ports"]:
-            print("Ports: {1}/tcp/open".format(host, ports))
+        print("Current scan:")
+        for port in new_results:
+            print("Port: {} /tcp/open".format(port))
 
     # Save results
     with open(OUTPUT_FILE, "w") as file:
         json.dump(results, file)
-
+     
 def scan_host(host, startPort, endPort, results):
-    previous_results = list(results[host]["ports"])
+    previous_results = []
     if host not in results:
-        results.update({host: {"ports": []}})        
+        results.update({host: {"ports": []}})                      
     else:
-        results[host]["ports"].clear()
-
+        for port in results[host]["ports"]:
+          previous_results.append(port)
+        results[host]["ports"].clear()  
+              
     # Scan ports simultaneously    
     tasks = Pool(1024)
     for port in range(startPort, endPort+1):
