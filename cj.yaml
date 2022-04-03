@@ -9,7 +9,7 @@ spec:
       template:
         spec:
           containers:
-          - name: network_scanner
+          - name: scanner
             image: busybox:1.28
             imagePullPolicy: IfNotPresent
             command:

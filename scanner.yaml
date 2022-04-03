@@ -15,7 +15,7 @@ spec:
         app: scanner
     spec:
       containers:
-      - name: networkScanner
-        image: jana.vonsak/scanner:dev
+      - name: scanner
+        image: janavonsak/scanner:dev
         ports:
         - containerPort: 80
