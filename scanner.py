@@ -8,6 +8,7 @@ from queue import Queue
 from threading import Thread
 
 OUTPUT_FILE = 'scan.json'
+last_results = {}
 
 class MyThread (Thread):
     def __init__(self, tasks):
@@ -27,19 +28,15 @@ class MyThread (Thread):
                 self.pool.task_done()
 
 class Pool:
-    """Pool for Tasks """
-
     def __init__(self, threads):
         self.tasks = Queue(threads)
         for _ in range(threads):
             MyThread(self.tasks)
 
     def add_task(self, func, *args, **kwargs):
-        """ """
         self.tasks.put((func, args, kwargs))
 
     def wait(self):
-        """ """
         self.tasks.join()
 
 def scan_port(host, port, results):
@@ -60,46 +57,51 @@ def scan_port(host, port, results):
         print("\ Error: Server not responding.")
         sys.exit()
 
-def compare_scans(previous_results, host, ports, results):
+def compare_scans(results, host):
+    print("-" * 50)    
     new_results = list(results[host]["ports"])
+    new_results.sort()
+    if len(last_results) > 0:
+        old_results = list(last_results[host]["ports"])
+    else:
+        old_results = []
 
-    if previous_results != new_results or (previous_results is None and new_results is None):
-        print("-" * 50)
+    if  old_results != new_results:      
         print("Differences for host {} found!".format(host))
         print("Current scan:")
-        for port in new_results:
+        for port in results[host]["ports"]:
             print("Port: {} /tcp/open".format(port))
-        print("Previous scan:")
-        for port in previous_results:
-            print("Ports: {} /tcp/open".format(port))
-    else:
-        print("-" * 50)
+        if old_results:
+            print("Previous scan:")
+            for port in last_results[host]["ports"]:
+                print("Ports: {} /tcp/open".format(port))
+    else:        
         print("Host {}: No difference in open ports found in the current scan".format(host))
         print("Current scan:")
-        for port in new_results:
+        for port in results[host]["ports"]:
             print("Port: {} /tcp/open".format(port))
 
     # Save results
     with open(OUTPUT_FILE, "w") as file:
         json.dump(results, file)
      
-def scan_host(host, startPort, endPort, results):
-    previous_results = []
+def scan_host(host, startPort, endPort, results, tasks):
     if host not in results:
         results.update({host: {"ports": []}})                      
     else:
+        last_results.update({host: {"ports": []}}) 
         for port in results[host]["ports"]:
-          previous_results.append(port)
-        results[host]["ports"].clear()  
-              
-    # Scan ports simultaneously    
-    tasks = Pool(1024)
+          last_results[host]["ports"].append(port)
+        results[host]["ports"].clear()               
+    
+    # Scan hosts simultaneously   
     for port in range(startPort, endPort+1):
         tasks.add_task (scan_port, host, port, results)
     tasks.wait()
-    compare_scans(previous_results, host, port, results)     
+    compare_scans(results, host)
 
 def main():
+    
     # Define variables
     port_start = 1
     port_end = 150
@@ -154,9 +156,9 @@ def main():
             results = json.load(file)
     except IOError:
         pass    
-
-    for ip in targetIps:       
-        scan_host(str(ip), port_start, port_end, results)   
+    tasks = Pool(1000)
+    for ip in targetIps:               
+        scan_host(str(ip), port_start, port_end, results, tasks)   
 
 if __name__ == "__main__":
     main()
