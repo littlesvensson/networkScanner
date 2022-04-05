@@ -7,12 +7,12 @@ Network scanner takes care of repetitive network scans of defined IP address or 
 Scanning ports on a single host/defined network:
 
 ```
-$ ./scanner.py -i <ipaddress/network>
+$ python ./scanner.py -i <ipaddress/network>
 ```
 Scanning defined ports:
 
 ```
-$ ./scanner.py -i <ipaddress/network> -s <starting port number> -e <ending port number>
+$ python ./scanner.py -i <ipaddress/network> -s <starting port number> -e <ending port number>
 ```
 
 The host/network parameter is required in order to run the scan.

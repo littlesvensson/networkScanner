@@ -15,5 +15,5 @@ spec:
             command:
             - /bin/sh
             - -c
-            - python scanner.py --ip 192.168.1.13
+            - python scanner.py --ip 192.168.1.0/24
           restartPolicy: OnFailure
